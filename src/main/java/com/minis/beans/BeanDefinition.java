@@ -1,4 +1,4 @@
-package com.minis;
+package com.minis.beans;
 
 /**
  * @author 邹茂萍
