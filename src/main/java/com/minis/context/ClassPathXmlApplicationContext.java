@@ -3,8 +3,8 @@ package com.minis.context;
 import com.minis.beans.BeansException;
 import com.minis.beans.factory.BeanFactory;
 import com.minis.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
-import com.minis.beans.factory.config.AutowireCapableBeanFactory;
 import com.minis.beans.factory.config.BeanFactoryPostProcessor;
+import com.minis.beans.factory.support.DefaultListableBeanFactory;
 import com.minis.beans.factory.xml.XmlBeanDefinitionReader;
 import com.minis.core.ClassPathXmlResource;
 import com.minis.core.Resource;
@@ -17,7 +17,7 @@ import java.util.List;
  * @date 2024-10-30
  */
 public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationEventPublisher {
-    AutowireCapableBeanFactory beanFactory;
+    DefaultListableBeanFactory beanFactory;
     private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new ArrayList<>();
 
     // context 负责整合容器的启动过程，读外部配置，解析Bean 定义，创建BeanFactory
@@ -27,7 +27,8 @@ public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationE
 
     public ClassPathXmlApplicationContext(String fileName, boolean isRefresh) {
         final Resource resource = new ClassPathXmlResource(fileName);
-        final AutowireCapableBeanFactory simpleBeanFactory = new AutowireCapableBeanFactory();
+
+        final DefaultListableBeanFactory simpleBeanFactory = new DefaultListableBeanFactory();
         final XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(simpleBeanFactory);
         // Ooh!
         reader.loadBeanDefinition(resource);
@@ -58,7 +59,7 @@ public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationE
         onRefresh();
     }
 
-    private void registerBeanPostProcessors(AutowireCapableBeanFactory bf) {
+    private void registerBeanPostProcessors(DefaultListableBeanFactory bf) {
         //if (supportAutowire) {
         bf.addBeanPostProcessor(new AutowiredAnnotationBeanPostProcessor());
         //}
