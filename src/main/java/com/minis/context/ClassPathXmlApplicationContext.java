@@ -1,9 +1,9 @@
 package com.minis.context;
 
 import com.minis.beans.BeansException;
-import com.minis.beans.factory.BeanFactory;
 import com.minis.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor;
 import com.minis.beans.factory.config.BeanFactoryPostProcessor;
+import com.minis.beans.factory.config.ConfigurableListableBeanFactory;
 import com.minis.beans.factory.support.DefaultListableBeanFactory;
 import com.minis.beans.factory.xml.XmlBeanDefinitionReader;
 import com.minis.core.ClassPathXmlResource;
@@ -16,7 +16,7 @@ import java.util.List;
  * @author 邹茂萍
  * @date 2024-10-30
  */
-public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationEventPublisher {
+public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
     DefaultListableBeanFactory beanFactory;
     private final List<BeanFactoryPostProcessor> beanFactoryPostProcessors = new ArrayList<>();
 
@@ -27,20 +27,36 @@ public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationE
 
     public ClassPathXmlApplicationContext(String fileName, boolean isRefresh) {
         final Resource resource = new ClassPathXmlResource(fileName);
-
-        final DefaultListableBeanFactory simpleBeanFactory = new DefaultListableBeanFactory();
-        final XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(simpleBeanFactory);
+        final DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+        final XmlBeanDefinitionReader reader = new XmlBeanDefinitionReader(beanFactory);
         // Ooh!
         reader.loadBeanDefinition(resource);
 
-        this.beanFactory = simpleBeanFactory;
+        this.beanFactory = beanFactory;
+
         if (isRefresh) {
             try {
-                refresh();
+                this.refresh();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    @Override
+    void registerListeners() {
+        final ApplicationListener listener = new ApplicationListener();
+        this.getApplicationEventPublisher().addApplicationListener(listener);
+    }
+
+    @Override
+    void initApplicationEventPublisher() {
+        final SimpleApplicationEventPublisher aep = new SimpleApplicationEventPublisher();
+        this.setApplicationEventPublisher(aep);
+    }
+
+    @Override
+    void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
     }
 
     public List<BeanFactoryPostProcessor> getBeanFactoryPostProcessors() {
@@ -49,6 +65,11 @@ public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationE
 
     public void addBeanFactoryPostProcessor(BeanFactoryPostProcessor postProcessor) {
         this.beanFactoryPostProcessors.add(postProcessor);
+    }
+
+    @Override
+    void registerBeanPostProcessor(ConfigurableListableBeanFactory beanFactory) {
+        this.beanFactory.addBeanPostProcessor(new AutowiredAnnotationBeanPostProcessor());
     }
 
     public void refresh() throws BeansException, IllegalStateException {
@@ -65,8 +86,19 @@ public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationE
         //}
     }
 
-    private void onRefresh() {
+    @Override
+    void onRefresh() {
         this.beanFactory.refresh();
+    }
+
+    @Override
+    public ConfigurableListableBeanFactory getBeanFactory() {
+        return this.beanFactory;
+    }
+
+    @Override
+    void finishRefresh() {
+        publishEvent(new ContextRefreshEvent("Context Refreshed..."));
     }
 
     @Override
@@ -86,6 +118,12 @@ public class ClassPathXmlApplicationContext implements BeanFactory, ApplicationE
 
     @Override
     public void publishEvent(ApplicationEvent event) {
+        this.getApplicationEventPublisher().publishEvent(event);
+    }
+
+    @Override
+    public void addApplicationListener(ApplicationListener listener) {
+        this.getApplicationEventPublisher().addApplicationListener(listener);
     }
 
     @Override

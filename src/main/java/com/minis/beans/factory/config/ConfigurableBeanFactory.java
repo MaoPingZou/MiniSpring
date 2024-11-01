@@ -1,7 +1,6 @@
-package com.minis.beans.factory;
+package com.minis.beans.factory.config;
 
-import com.minis.beans.factory.config.BeanPostProcessor;
-import com.minis.beans.factory.config.SingletonBeanRegistry;
+import com.minis.beans.factory.BeanFactory;
 
 /**
  * 维护Bean之间的依赖关系以及支持 Bean处理器
