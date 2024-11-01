@@ -1,4 +1,4 @@
-package com.minis.beans;
+package com.minis.beans.factory.config;
 
 import java.util.*;
 
@@ -6,18 +6,18 @@ import java.util.*;
  * @author 邹茂萍
  * @date 2024-10-30
  */
-public class ArgumentValues {
-    private final Map<Integer, ArgumentValue> indexedArgumentValues = new HashMap<>();
-    private final List<ArgumentValue> argumentValueList = new ArrayList<>();
+public class ConstructorArgumentValues {
+    private final Map<Integer, ConstructorArgumentValue> indexedArgumentValues = new HashMap<>();
+    private final List<ConstructorArgumentValue> argumentValueList = new ArrayList<>();
 
-    public ArgumentValues() {
+    public ConstructorArgumentValues() {
     }
 
-    public void addArgumentValue(ArgumentValue argumentValue) {
+    public void addArgumentValue(ConstructorArgumentValue argumentValue) {
         this.argumentValueList.add(argumentValue);
     }
 
-    private void addArgumentValue(Integer key, ArgumentValue newValue) {
+    private void addArgumentValue(Integer key, ConstructorArgumentValue newValue) {
         this.indexedArgumentValues.put(key, newValue);
     }
 
@@ -25,18 +25,18 @@ public class ArgumentValues {
         return this.indexedArgumentValues.containsKey(index);
     }
 
-    public ArgumentValue getIndexedArgumentValue(int index) {
+    public ConstructorArgumentValue getIndexedArgumentValue(int index) {
         return this.argumentValueList.get(index);
     }
     public void addGenericArgumentValue(Object value, String type) {
-        this.argumentValueList.add(new ArgumentValue(type, value));
+        this.argumentValueList.add(new ConstructorArgumentValue(type, value));
     }
 
-    private void addGenericArgumentValue(ArgumentValue newValue) {
+    private void addGenericArgumentValue(ConstructorArgumentValue newValue) {
         if (newValue.getName() != null) {
-            for (final Iterator<ArgumentValue> it
+            for (final Iterator<ConstructorArgumentValue> it
                  = this.argumentValueList.iterator(); it.hasNext(); ) {
-                final ArgumentValue currentValue = it.next();
+                final ConstructorArgumentValue currentValue = it.next();
                 if (newValue.getName().equals(currentValue.getName())) {
                     it.remove();
                 }
@@ -45,8 +45,8 @@ public class ArgumentValues {
         this.argumentValueList.add(newValue);
     }
 
-    public ArgumentValue getGenericArgumentValue(String requiredName) {
-        for (ArgumentValue valueHolder : this.argumentValueList) {
+    public ConstructorArgumentValue getGenericArgumentValue(String requiredName) {
+        for (ConstructorArgumentValue valueHolder : this.argumentValueList) {
             if (valueHolder.getName() != null && (!valueHolder.getName().equals(requiredName))) {
                 continue;
             }

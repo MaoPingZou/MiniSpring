@@ -1,10 +1,14 @@
 package com.minis.test;
 
+import com.minis.beans.factory.annotation.Autowired;
+
 /**
  * @author 邹茂萍
  * @date 2024-10-31
  */
 public class BaseService {
+
+    @Autowired
     private BaseBaseService bbs;
 
     public BaseBaseService getBbs() {

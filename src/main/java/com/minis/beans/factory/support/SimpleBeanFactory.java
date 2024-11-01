@@ -1,4 +1,10 @@
-package com.minis.beans;
+package com.minis.beans.factory.support;
+
+import com.minis.beans.*;
+import com.minis.beans.factory.BeanFactory;
+import com.minis.beans.factory.config.ConstructorArgumentValue;
+import com.minis.beans.factory.config.ConstructorArgumentValues;
+import com.minis.beans.factory.config.BeanDefinition;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -82,12 +88,12 @@ public class SimpleBeanFactory extends DefaultSingletonBeanRegistry implements B
             clz = Class.forName(bd.getClassName());
 
             //handle constructor
-            ArgumentValues argumentValues = bd.getConstructorArgumentValues();
+            ConstructorArgumentValues argumentValues = bd.getConstructorArgumentValues();
             if (!argumentValues.isEmpty()) {
                 Class<?>[] paramTypes = new Class<?>[argumentValues.getArgumentCount()];
                 Object[] paramValues = new Object[argumentValues.getArgumentCount()];
                 for (int i = 0; i < argumentValues.getArgumentCount(); i++) {
-                    ArgumentValue argumentValue = argumentValues.getIndexedArgumentValue(i);
+                    ConstructorArgumentValue argumentValue = argumentValues.getIndexedArgumentValue(i);
                     if ("String".equals(argumentValue.getType()) || "java.lang.String".equals(argumentValue.getType())) {
                         paramTypes[i] = String.class;
                         paramValues[i] = argumentValue.getValue();
