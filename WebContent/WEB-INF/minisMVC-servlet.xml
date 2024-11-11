@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!-- 用于组件配置以及组件扫描配置：指定一个包，自动配置包内满足条件的类，省去手工配置过程 -->
 <components>
-    <component-scan base-package="com.minis.test"/>
+    <component-scan base-package="com.test"/>
 </components>
 <!--<bean>-->
 <!--    <bean id="/helloworld" class="com.minis.test.HelloWorldBean" value="doGet"/>-->

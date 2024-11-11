@@ -1,5 +1,7 @@
 package com.minis.web;
 
+import com.minis.beans.BeansException;
+import com.minis.beans.factory.annotation.Autowired;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -8,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -38,12 +41,16 @@ public class DispatcherServlet extends HttpServlet {
     // 存放映射的方法
     private final Map<String, Method> mappingMethods = new HashMap<>();
 
+    private WebApplicationContext webApplicationContext;
+
     // 初始化函数
     public void init(ServletConfig config) throws ServletException {
         System.out.println("init 自定义 init.......");
         // 先调用父类的初始化函数
         super.init(config);
 
+        // 拿到启动时的 wac
+        this.webApplicationContext = (WebApplicationContext) this.getServletContext().getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
         sContextConfigLocation = config.getInitParameter("contextConfigLocation");
         URL xmPath = null;
 
@@ -98,11 +105,36 @@ public class DispatcherServlet extends HttpServlet {
             }
             try {
                 obj = clz.newInstance(); // 实例化 bean
+
+                populateBean(obj, controllerName);
+
+
                 this.controllerObjs.put(controllerName, obj);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    protected Object populateBean(Object bean, String beanName) throws BeansException {
+        Object result = bean;
+
+        final Class<?> clazz = bean.getClass();
+        final Field[] fields = clazz.getDeclaredFields();
+        for (Field field : fields) {
+            final boolean isAutowired = field.isAnnotationPresent(Autowired.class);
+            if (isAutowired) {
+                final String fieldName = field.getName();
+                final Object autowiredObj = this.webApplicationContext.getBean(fieldName);
+                try {
+                    field.setAccessible(true);
+                    field.set(bean, autowiredObj);
+                } catch (IllegalArgumentException | IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return result;
     }
 
     private List<String> scanPackages(List<String> packages) {
