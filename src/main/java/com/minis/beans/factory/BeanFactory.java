@@ -8,7 +8,7 @@ public interface BeanFactory {
 
     Boolean containsBean(String name);
 
-    void registerBean(String beanName, Object obj);
+//    void registerBean(String beanName, Object obj);
 
     boolean isSingleton(String name);
 

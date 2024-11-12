@@ -18,6 +18,8 @@ public class DefaultListableBeanFactory
         extends AbstractAutowireCapableBeanFactory
         implements ConfigurableListableBeanFactory {
 
+    ConfigurableListableBeanFactory parentBeanFactory;
+
     @Override
     public int getBeanDefinitionCount() {
         return this.beanDefinitionMap.size();
@@ -44,6 +46,20 @@ public class DefaultListableBeanFactory
             }
         }
         return result.toArray(new String[0]);
+    }
+
+    public void setParent(ConfigurableListableBeanFactory beanFactory) {
+        this.parentBeanFactory = beanFactory;
+    }
+
+    @Override
+    public Object getBean(String beanName) throws BeansException {
+        Object bean = super.getBean(beanName);
+        if (bean == null) {
+            // 从父容器中获得
+            bean = this.parentBeanFactory.getBean(beanName);
+        }
+        return bean;
     }
 
     // 返回所有与给定类型匹配的 Bean 的名称和实例，以映射的形式返回

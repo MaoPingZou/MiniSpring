@@ -44,19 +44,19 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
     }
 
     @Override
-    void registerListeners() {
+    public void registerListeners() {
         final ApplicationListener listener = new ApplicationListener();
         this.getApplicationEventPublisher().addApplicationListener(listener);
     }
 
     @Override
-    void initApplicationEventPublisher() {
+    public void initApplicationEventPublisher() {
         final SimpleApplicationEventPublisher aep = new SimpleApplicationEventPublisher();
         this.setApplicationEventPublisher(aep);
     }
 
     @Override
-    void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) {
     }
 
     public List<BeanFactoryPostProcessor> getBeanFactoryPostProcessors() {
@@ -68,7 +68,7 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
     }
 
     @Override
-    void registerBeanPostProcessor(ConfigurableListableBeanFactory beanFactory) {
+    public void registerBeanPostProcessor(ConfigurableListableBeanFactory beanFactory) {
         this.beanFactory.addBeanPostProcessor(new AutowiredAnnotationBeanPostProcessor());
     }
 
@@ -87,7 +87,7 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
     }
 
     @Override
-    void onRefresh() {
+    public void onRefresh() {
         this.beanFactory.refresh();
     }
 
@@ -97,7 +97,7 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
     }
 
     @Override
-    void finishRefresh() {
+    public void finishRefresh() {
         publishEvent(new ContextRefreshEvent("Context Refreshed..."));
     }
 
@@ -111,10 +111,10 @@ public class ClassPathXmlApplicationContext extends AbstractApplicationContext {
         return this.beanFactory.containsBean(name);
     }
 
-    @Override
-    public void registerBean(String beanName, Object obj) {
-        this.beanFactory.registerBean(beanName, obj);
-    }
+//    @Override
+//    public void registerBean(String beanName, Object obj) {
+//        this.beanFactory.registerBean(beanName, obj);
+//    }
 
     @Override
     public void publishEvent(ApplicationEvent event) {

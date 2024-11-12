@@ -2,6 +2,7 @@ package com.minis.web;
 
 import com.minis.beans.BeansException;
 import com.minis.beans.factory.annotation.Autowired;
+import com.minis.web.servlet.*;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -11,7 +12,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -26,6 +26,7 @@ import java.util.Map;
  */
 public class DispatcherServlet extends HttpServlet {
 
+    public static final String WEB_APPLICATION_CONTEXT_ATTRIBUTE = DispatcherServlet.class.getName() + ".CONTEXT";
     private String sContextConfigLocation;
     // 存储需要扫描的 package 列表
     private List<String> packageNames = new ArrayList<>();
@@ -34,14 +35,13 @@ public class DispatcherServlet extends HttpServlet {
     private Map<String, Object> controllerObjs = new HashMap<>();
     private Map<String, Class<?>> controllerClasses = new HashMap<>();
 
-    // 存放 bean 得类定义
-    private List<String> urlMappingNames = new ArrayList<>();
-    // 存放 bean 实例
-    private final Map<String, Object> mappingObjs = new HashMap<>();
-    // 存放映射的方法
-    private final Map<String, Method> mappingMethods = new HashMap<>();
-
+    // Web 上下文，
     private WebApplicationContext webApplicationContext;
+    // 用于 IoC 容器，parent 上下文
+    private WebApplicationContext parentWebApplicationContext;
+
+    private HandlerMapping handlerMapping;
+    private HandlerAdapter handlerAdapter;
 
     // 初始化函数
     public void init(ServletConfig config) throws ServletException {
@@ -50,7 +50,7 @@ public class DispatcherServlet extends HttpServlet {
         super.init(config);
 
         // 拿到启动时的 wac
-        this.webApplicationContext = (WebApplicationContext) this.getServletContext().getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
+        this.parentWebApplicationContext = (WebApplicationContext) this.getServletContext().getAttribute(WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE);
         sContextConfigLocation = config.getInitParameter("contextConfigLocation");
         URL xmPath = null;
 
@@ -61,6 +61,8 @@ public class DispatcherServlet extends HttpServlet {
         }
 
         this.packageNames = XmlScanComponentHelper.getNodeValue(xmPath);
+        // 持有对 parent 上下文的引用
+        this.webApplicationContext = new AnnotationConfigWebApplicationContext(sContextConfigLocation, this.parentWebApplicationContext);
 
         refresh();
     }
@@ -68,27 +70,17 @@ public class DispatcherServlet extends HttpServlet {
     // 对所有的 mappingValues 中注册的类进行实例化，默认构造函数
     protected void refresh() {
         initController(); // 初始化 controller
-        initMapping(); // 初始化 url 映射
+
+        initHandleMappings(this.webApplicationContext);
+        initHandlerAdapter(this.webApplicationContext);
     }
 
-    protected void initMapping() {
-        for (String controllerName : this.controllerNames) {
-            // clazz 是用来反射获取类中的属性和方法的，在框架中极其常见
-            final Class<?> clazz = this.controllerClasses.get(controllerName);
-            final Object obj = this.controllerObjs.get(controllerName);
+    protected void initHandleMappings(WebApplicationContext wac) {
+        this.handlerMapping = new RequestMappingHandlerMapping(wac);
+    }
 
-            final Method[] methods = clazz.getDeclaredMethods();
-            for (Method method : methods) {
-                boolean isRequestMapping = method.isAnnotationPresent(RequestMapping.class);
-                if (isRequestMapping) {
-                    final String urlMapping = method.getAnnotation(RequestMapping.class).value();
-                    // 存储 url映射路径
-                    this.urlMappingNames.add(urlMapping);
-                    this.mappingObjs.put(urlMapping, obj);
-                    this.mappingMethods.put(urlMapping, method);
-                }
-            }
-        }
+    protected void initHandlerAdapter(WebApplicationContext wac) {
+        this.handlerAdapter = new RequestMappingHandlerAdapter(wac);
     }
 
     protected void initController() {
@@ -178,30 +170,55 @@ public class DispatcherServlet extends HttpServlet {
     }
 
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        System.out.println("doGet.......");
-        final String requestPath = request.getServletPath();
-        System.out.println("requestPath: " + requestPath);
-        if (!this.urlMappingNames.contains(requestPath)) {
-            response.getWriter().append("This path does not exist......");
-            System.out.println("碰到问题，就去 Debug.......");
+    @Override
+    protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, this.webApplicationContext);
+        try {
+            doDispatch(request, response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+        }
+    }
+
+    protected void doDispatch(HttpServletRequest request, HttpServletResponse response) throws Exception {
+        HttpServletRequest processedRequest = request;
+        HandlerMethod handlerMethod = null;
+
+        handlerMethod = this.handlerMapping.getHandler(processedRequest);
+        if (handlerMethod == null) {
             return;
         }
 
-        Object obj = null;
-        Object objResult = null;
+        HandlerAdapter ha = this.handlerAdapter;
 
-        try {
-            final Method method = this.mappingMethods.get(requestPath);
-            obj = this.mappingObjs.get(requestPath);
-            objResult = method.invoke(obj);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        // 将方法返回值写入Response
-        System.out.println("objResult ---> " + objResult);
-        response.getWriter().append(objResult.toString());
-        System.out.println("碰到问题，就去 Debug.......");
+        ha.handle(processedRequest, response, handlerMethod);
     }
+
+    //    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+//        System.out.println("doGet.......");
+//        final String requestPath = request.getServletPath();
+//        System.out.println("requestPath: " + requestPath);
+//        if (!this.urlMappingNames.contains(requestPath)) {
+//            response.getWriter().append("This path does not exist......");
+//            System.out.println("碰到问题，就去 Debug.......");
+//            return;
+//        }
+//
+//        Object obj = null;
+//        Object objResult = null;
+//
+//        try {
+//            final Method method = this.mappingMethods.get(requestPath);
+//            obj = this.mappingObjs.get(requestPath);
+//            objResult = method.invoke(obj);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//        // 将方法返回值写入Response
+//        System.out.println("objResult ---> " + objResult);
+//        response.getWriter().append(objResult.toString());
+//        System.out.println("碰到问题，就去 Debug.......");
+//    }
 
 }

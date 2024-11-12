@@ -36,20 +36,20 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
     }
 
     // 注册监听器
-    abstract void registerListeners();
+    public abstract void registerListeners();
 
     // 初始化事件发布器
-    abstract void initApplicationEventPublisher();
+    public abstract void initApplicationEventPublisher();
 
     //
-    abstract void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory);
+    public abstract void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory);
 
     // 注册 bean postProcessor 处理器
-    abstract void registerBeanPostProcessor(ConfigurableListableBeanFactory beanFactory);
+    public abstract void registerBeanPostProcessor(ConfigurableListableBeanFactory beanFactory);
 
-    abstract void onRefresh();
+    public abstract void onRefresh();
 
-    abstract void finishRefresh();
+    public abstract void finishRefresh();
 
 
     @Override
@@ -178,6 +178,27 @@ public abstract class AbstractApplicationContext implements ApplicationContext {
     @Override
     public <T> Map<String, T> getBeansOfType(Class<?> type) throws BeansException {
         return getBeanFactory().getBeansOfType(type);
+    }
+
+    @Override
+    public Boolean containsBean(String name) {
+        return getBeanFactory().containsBean(name);
+    }
+
+
+    @Override
+    public boolean isSingleton(String name) {
+        return getBeanFactory().isSingleton(name);
+    }
+
+    @Override
+    public boolean isPrototype(String name) {
+        return getBeanFactory().isPrototype(name);
+    }
+
+    @Override
+    public Class<?> getType(String name) {
+        return getBeanFactory().getType(name);
     }
 
     // ------ End ListableBeanFactory
